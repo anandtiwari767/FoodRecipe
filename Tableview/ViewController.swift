@@ -7,10 +7,13 @@
 //
 
 import UIKit
+import Alamofire
+import SwiftyJSON
 struct food : Codable{
     var count:Int?
     var recipes:[Recipes]?
 }
+
 struct Recipes :Codable{
     var publisher:String?
     var f2f_url:String?
@@ -33,7 +36,6 @@ class ViewController: UIViewController {
     var i=0
     var searchArr : [String]=[]
     var searching = false
-    
     @IBOutlet var tableview: UITableView!
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -44,33 +46,67 @@ class ViewController: UIViewController {
         super.didReceiveMemoryWarning()
        
     }
+    
     func callApi(){
-        let url = URL(string: "https://www.food2fork.com/api/search?key=bb1d78b48fce5718c685f987841034be")!
-        var request=URLRequest(url: url)
-        request.httpMethod = "GET"
-        let session = URLSession.shared
-        session.dataTask(with: request){(data,response,error) in
-            if let data = data {
-                do{
-                    let json = try? JSONDecoder().decode(food.self, from: data)
+        Alamofire.request("https://www.food2fork.com/api/search?key=bb1d78b48fce5718c685f987841034be", method: .get ).responseJSON{
+            response in
+            if response.result.isSuccess{
+                let data:JSON = JSON(response.result.value!)
+                let temp = data["count"].int
+                while(self.i < temp!){
                     
-                    while(self.i<(json?.count)!){
-                        
-                       self.til.append((json?.recipes![self.i].title)!)
-                        self.images.append((json?.recipes![self.i].image_url)!)
-                        self.rid.append((json?.recipes![self.i].recipe_id)!)
-                        
-//                        print(self.til)
-                        self.i+=1
-                    }
-                 
-                    DispatchQueue.main.async {
-                        self.tableview.reloadData()
-                    }
+                    self.til.append(data["recipes"][self.i]["title"].string!)
+                    self.images.append(data["recipes"][self.i]["image_url"].string!)
+                    self.rid.append(data["recipes"][self.i]["recipe_id"].string!)
+                    
+                    self.i+=1
                 }
-                }
-}.resume()
-    }}
+               
+                DispatchQueue.main.async {
+                                            self.tableview.reloadData()
+                                        }
+                
+                
+            }else {
+                print("we are having some problem")
+            }
+        }
+    }
+    
+    
+    
+    
+    //API call with out cocoa pods
+    
+//    func callApi(){
+//        let url = URL(string: "https://www.food2fork.com/api/search?key=bb1d78b48fce5718c685f987841034be")!
+//        var request=URLRequest(url: url)
+//        request.httpMethod = "GET"
+//        let session = URLSession.shared
+//        session.dataTask(with: request){(data,response,error) in
+//            if let data = data {
+//                do{
+//                    let json = try? JSONDecoder().decode(food.self, from: data)
+//
+//                    while(self.i<(json?.count)!){
+//
+//                       self.til.append((json?.recipes![self.i].title)!)
+//                        self.images.append((json?.recipes![self.i].image_url)!)
+//                        self.rid.append((json?.recipes![self.i].recipe_id)!)
+//
+////                        print(self.til)
+//                        self.i+=1
+//                    }
+//
+//                    DispatchQueue.main.async {
+//                        self.tableview.reloadData()
+//                    }
+//                }
+//                }
+//}.resume()
+//    }
+    
+}
 
     extension ViewController :UITableViewDelegate,UITableViewDataSource{
     func numberOfSections(in tableView: UITableView) -> Int {
